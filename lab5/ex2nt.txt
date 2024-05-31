@@ -1,0 +1,83 @@
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+class ExecutionThread extends Thread {
+
+    int name, activity_min, activity_max, sleep;
+
+    Lock l1, l2;
+
+    public ExecutionThread(int n, Lock la, Lock lb, int sleep) {
+        this.name = n;
+        this.l1 = la;
+        this.l2 = lb;
+        this.sleep = sleep;
+    }
+
+    public void run() {
+
+        int k = (int) (Math.random() * (activity_max - activity_min)) + activity_min;
+        for (int i = 0; i < k * 100000; i++) {
+            i++;
+            i--;
+        }
+
+        System.out.println(getName() + " - STATE 1");
+        this.l1.lock();
+        System.out.println("The thread " + name + " acquired the lock 1");
+
+        criticalRegion();
+
+        this.l1.unlock();
+        System.out.println("The thread " + name + " released the lock 1");
+
+        System.out.println(getName() + " - STATE 3");
+        try {
+            Thread.sleep(sleep);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println(getName() + " - STATE 4");
+
+    }
+
+    public void criticalRegion() {
+
+        System.out.println(name + " IS EXECUTING THE CRITICAL REGION!");
+
+        System.out.println(getName() + " - STATE 2");
+        int k = (int) (Math.random() * (activity_max - activity_min)) + activity_min;
+        for (int i = 0; i < k * 100000; i++) {
+            i++;
+            i--;
+        }
+
+        this.l2.lock();
+        System.out.println("The thread " + name + " acquired the lock 2");
+        this.l2.unlock();
+        System.out.println("The thread " + name + " acquired the lock 2");
+
+    }
+
+}
+
+public class Main {
+
+    public static void main(String args[]) {
+
+        Lock l1 = new ReentrantLock();
+        Lock l2 = new ReentrantLock();
+        ExecutionThread f1, f2;
+
+        f1 = new ExecutionThread(1, l1, l2, 4);
+
+        f2 = new ExecutionThread(2, l2, l1, 5);
+
+        f1.start();
+
+        f2.start();
+
+    }
+
+}
